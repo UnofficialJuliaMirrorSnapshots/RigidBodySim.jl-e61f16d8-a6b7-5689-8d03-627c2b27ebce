@@ -6,12 +6,6 @@ export
     GUI,
     setanimation!
 
-# deprecated:
-export
-    animate,
-    window,
-    visualize
-
 using MeshCatMechanisms
 
 using DocStringExtensions
@@ -38,7 +32,6 @@ using Observables: Observable
 using InteractBase: Widget, button, observe
 using WebIO: render, node, Node
 using Blink: Window, body!, title
-using CSSUtil: vbox
 
 using DataStructures: top
 
@@ -134,26 +127,23 @@ function WebIO.render(controls::SimulationControls)
         """),
         node(:div,
             node(:div,
-                node(:div,
-                    node(:div, "Time:"),
-                    render(controls.time),
-                    style = Dict(:fontSize => "10pt", :fontFamily => "sans-serif",
-                                :userSelect => "none", :cursor => "default",
-                                :height => "2.5em", :width => "8em", :marginLeft => "0.5em", :marginRight => "0.5em", :lineHeight => "2.5em",
-                                :display => "flex", :justifyContent => "space-between")
-                ),
-                node(:div, controls.pause, attributes = Dict(:class => "rigidbodysim-controls-pause")),
-                node(:div, controls.terminate, attributes = Dict(:class => "rigidbodysim-controls-terminate")),
-                attributes = Dict(:class => "rigidbodysim-controls"),
-                style = Dict(:display => "flex", :flexWrap => "wrap")
-            )
-        ),
-        style = Dict(:overflow => "hidden")
+                node(:div, "Time:"),
+                render(controls.time),
+                style = Dict(:fontSize => "10pt", :fontFamily => "sans-serif",
+                            :userSelect => "none", :cursor => "default",
+                            :height => "2.5em", :width => "8em", :marginLeft => "0.5em", :marginRight => "0.5em", :lineHeight => "2.5em",
+                            :display => "flex", :justifyContent => "space-between")
+            ),
+            node(:div, controls.pause, attributes = Dict(:class => "rigidbodysim-controls-pause")),
+            node(:div, controls.terminate, attributes = Dict(:class => "rigidbodysim-controls-terminate")),
+            attributes = Dict(:class => "rigidbodysim-controls"),
+            style = Dict(:display => "flex", :flexWrap => "wrap", :minHeight => "2.5em", :overflow => "hidden")
+        )
     )
 end
 
 function Base.open(controls::SimulationControls, window::Window)
-    size(window, 300, 55)
+    size(window, 300, 70)
     title(window, "RigidBodySim controls")
     body!(window, render(controls))
     nothing
@@ -199,10 +189,11 @@ GUI(mechanism::Mechanism, args...; usernode=nothing) = GUI(MechanismVisualizer(m
 
 function Base.open(gui::GUI, window::Window)
     title(window, "RigidBodySim")
-    body = vbox(
+    body = node(:div,
         WebIO.render(gui.controls),
-        WebIO.iframe(MeshCatMechanisms.visualizer(gui.visualizer).core),
-        WebIO.render(gui.usernode)
+        WebIO.iframe(MeshCatMechanisms.visualizer(gui.visualizer).core, minHeight="0"),
+        WebIO.render(gui.usernode),
+        style = Dict(:display => "flex", :flexDirection => "column", :height => "100vh")
     )
     body!(window, body)
     wait(gui)
@@ -218,8 +209,6 @@ Create the DifferentialEquations.jl callbacks associated with the [`GUI`](@ref).
 `max_fps` is the maximum number of frames per second (in terms of wall time) to draw. Default: `60.0`.
 """
 CallbackSet(gui::GUI; max_fps=60) = CallbackSet(CallbackSet(gui.controls), TransformPublisher(gui.visualizer; max_fps = max_fps))
-
-@deprecate CallbackSet(vis, state::MechanismState; max_fps = 60.) CallbackSet(vis; max_fps = max_fps)
 
 """
 Create the DifferentialEquations.jl callbacks needed for publishing to a
